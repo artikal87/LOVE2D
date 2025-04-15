@@ -11,3 +11,6 @@ def binary_search(arr,item):
         else:               # the only logical alternative to the above two possibilities is that the guess was too low,
             low = mid + 1   # therefore, the lowest guess index becomes 1 higher than the mid. 
     return None
+
+def second_function():
+    return None
