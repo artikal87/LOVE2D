@@ -29,4 +29,11 @@ def selection_sort(arr):
         newArr.append(copiedArr.pop(smallest))  # append the smallest term to new array. Done using pop method 
     return newArr                               # which removes & returns value at specified index
     
-    
+def quicksort(arr):                                     # time complexity: average is n log n, worst is n^2
+    if len(arr) < 2:
+        return arr
+    else:
+        pivot = arr[0]                                  # list comprehension - the following line says: [expression] for [iterable] if [condition]
+        less = [i for i in arr[1:] if i <= pivot]       # sub-array of all the elements less than the pivot
+        greater = [i for i in arr[1:] if i > pivot]     # sub-array of all the elements greater than the pivot
+        return quicksort(less) + [pivot] + quicksort(greater)
