@@ -39,4 +39,9 @@ def quicksort(arr):                                     # time complexity: avera
         return quicksort(less) + [pivot] + quicksort(greater)
     
 def hash_table_tutorial(name):
-    names =  {}
+    prices =  {}
+    prices["egg"] = 0.24
+    prices["salmon"] = 2.5
+    prices["kidney"] = 1.50
+    prices["steak"] = 4.49
+
