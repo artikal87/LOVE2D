@@ -8,6 +8,7 @@ function love.load()
     Player.y = 300
     Player.size = 20
     Player.velocity = 200
+    Player.direction = "E"
 
     Red = {255,0,0}
     Green = {0, 255, 0}
@@ -19,7 +20,6 @@ function love.load()
     Window.limitRight = 800 - Player.size
     Window.limitUpLeft = 0 + Player.size
     Window.limitDown = 600 - Player.size
-
     GameState = "menu"
 end
 
@@ -68,10 +68,17 @@ x x x x x x 6
 
 --]] 
 
+PlayerMovement = {
+    pieceCount = 2
+}
 
+function PlayerMovement:Logic()
+    for 
+end
 
 function love.update(dt)
-    
+
+
     if love.keyboard.isDown("w") and Player.y > Window.limitUpLeft then
         Player.y = Player.y - Player.velocity * dt
     end
@@ -94,7 +101,7 @@ function love.draw()
     love.graphics.setColor(Green)
     love.graphics.rectangle("fill",0 , 0, 800, 600)
     love.graphics.setColor(White)
-    love.graphics.circle("fill", Player.x, Player.y, Player.size)
+    love.graphics.rectangle("fill",Player.x,Player.y,Player.size,Player.size)
     love.graphics.setColor(Black)
     love.graphics.print(Player.x .. ", " .. Player.y .. " DT: " .. DeltaTime, 400, 400)
 end
