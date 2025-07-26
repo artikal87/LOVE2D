@@ -3,13 +3,23 @@ if arg[2] == "debug" then
 end
 
 function love.load()
-    Player = {}
-    Player.x = 400
-    Player.y = 300
-    Player.size = 20
-    Player.velocity = 200
-    Player.direction = "E"
+    Player = {
+    x = 400,
+    y = 300,
+    size = 20,
+    velocity = 200,
+    direction = "E",
+    pieceGap = 4,
+    pieceCount = 15
+    }
 
+    count = 0
+    updateDelay = 0.2
+
+    Player.totalGap = Player.size + Player.pieceGap
+    Player.lastPiece = Player.pieceCount
+
+    FirstLoad = true
     Red = {255,0,0}
     Green = {0, 255, 0}
     Blue = {0, 0, 255}
@@ -66,33 +76,80 @@ x x x x l x 4
 x x x x x x 5
 x x x x x x 6
 
---]] 
+]]
 
-PlayerMovement = {
-    pieceCount = 2
+SnakeObject = {
+    speed = 3,
+    direction = "E",
+    shapes = {},
+    shapeX = {},
+    shapeY = {}
 }
 
-function PlayerMovement:Logic()
-    for 
+function SnakeObject:Shapes() 
+    if FirstLoad == true then
+        for i=1, Player.pieceCount do
+            love.graphics.setColor(White)
+                if i == 1 then
+                    self.shapeX[i] = Player.x --table of coords will keep track of snake pieces
+                    self.shapeY[i] = Player.y
+                    self.shapes[1] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
+                else
+                    self.shapeX[i] = self.shapeX[i-1] - Player.totalGap
+                    self.shapeY[i] = self.shapeY[i-1]
+                    self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i],Player.size,Player.size)
+                end
+        end
+        FirstLoad = false
+
+    else
+        
+        for i=1, Player.pieceCount do
+            love.graphics.setColor(White)
+            if i == Player.lastPiece then
+                self.shapeX[i] = self.shapeX[1] + Player.totalGap
+                self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
+                if Player.lastPiece ~=1 then
+                    Player.lastPiece = Player.lastPiece - 1
+                else
+                    Player.lastPiece = Player.pieceCount
+                end
+            else
+                self.shapeX[i] = self.shapeX[i]
+                self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
+            end
+            --[[
+            if i == 1 then
+                self.shapes[self.pieceCount] = love.graphics.rectangle("fill",Player.x, Player.y,Player.size,Player.size)
+            elseif i ~= 1 and  i ~= self.pieceCount then
+                self.shapes[i] = love.graphics.rectangle("fill",Player.x - Player.totalGap * (i-1), Player.y,Player.size,Player.size)
+            end
+            ]]
+        end
+    end
 end
 
 function love.update(dt)
 
+    count = count + dt
 
+    if Player.x > Window.limitRight then
+        Player.x = Window.limitUpLeft
+    end
+    if count > updateDelay then
+        Player.x = Player.x + Player.totalGap
+        count = 0
+    end
     if love.keyboard.isDown("w") and Player.y > Window.limitUpLeft then
-        Player.y = Player.y - Player.velocity * dt
     end
 
-    if love.keyboard.isDown("s") and Player.y < Window.limitDown then
-        Player.y = Player.y + Player.velocity * dt
+    if love.keyboard.isDown("s") and Player.y < Window.limitDown then  
     end
 
-    if love.keyboard.isDown("a") and Player.x > Window.limitUpLeft then
-        Player.x = Player.x - Player.velocity * dt
+    if love.keyboard.isDown("a") and Player.x > Window.limitUpLeft then  
     end
     
     if love.keyboard.isDown("d") and Player.x < Window.limitRight then
-        Player.x = Player.x + Player.velocity * dt
     end
     DeltaTime = dt
 end
@@ -100,10 +157,10 @@ end
 function love.draw()
     love.graphics.setColor(Green)
     love.graphics.rectangle("fill",0 , 0, 800, 600)
-    love.graphics.setColor(White)
-    love.graphics.rectangle("fill",Player.x,Player.y,Player.size,Player.size)
+    SnakeObject:Shapes()
     love.graphics.setColor(Black)
     love.graphics.print(Player.x .. ", " .. Player.y .. " DT: " .. DeltaTime, 400, 400)
+    love.graphics.print(count, 400, 500)
 end
 
 local love_errorhandler = love.errorhandler
