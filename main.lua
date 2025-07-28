@@ -8,16 +8,17 @@ function love.load()
     y = 300,
     size = 20,
     velocity = 200,
-    direction = "E",
+    direction = "W",
     pieceGap = 4,
-    pieceCount = 15
+    pieceCount = 2
     }
 
     count = 0
-    updateDelay = 0.2
+    updateDelay = 0.5
 
+    SnakeObject.frontShape = 1
     Player.totalGap = Player.size + Player.pieceGap
-    Player.lastPiece = Player.pieceCount
+    Player.lastShape = Player.pieceCount
 
     FirstLoad = true
     Red = {255,0,0}
@@ -31,6 +32,9 @@ function love.load()
     Window.limitUpLeft = 0 + Player.size
     Window.limitDown = 600 - Player.size
     GameState = "menu"
+
+    SnakeObject:ShapeCoOrds(true)
+
 end
 
 --[[
@@ -80,77 +84,102 @@ x x x x x x 6
 
 SnakeObject = {
     speed = 3,
-    direction = "E",
     shapes = {},
     shapeX = {},
-    shapeY = {}
+    shapeY = {},
+    frontShape = 0,
+    xGap = 0,
+    yGap = 0
 }
 
-function SnakeObject:Shapes() 
-    if FirstLoad == true then
+function SnakeObject:ShapeCoOrds(firstCheck)
+    if Player.direction == "W" then
+        self.xGap = -Player.totalGap
+        self.yGap = 0
+    elseif Player.direction == "N" then
+        self.xGap = 0
+        self.yGap = -Player.totalGap
+    elseif Player.direction == "E" then
+        self.xGap = Player.totalGap
+        self.yGap = 0
+    elseif Player.direction == "S" then
+        self.xGap = 0
+        self.yGap = Player.totalGap
+    end
+    
+    if firstCheck == true then
         for i=1, Player.pieceCount do
-            love.graphics.setColor(White)
-                if i == 1 then
-                    self.shapeX[i] = Player.x --table of coords will keep track of snake pieces
-                    self.shapeY[i] = Player.y
-                    self.shapes[1] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
-                else
-                    self.shapeX[i] = self.shapeX[i-1] - Player.totalGap
-                    self.shapeY[i] = self.shapeY[i-1]
-                    self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i],Player.size,Player.size)
-                end
-        end
-        FirstLoad = false
-
-    else
-        
-        for i=1, Player.pieceCount do
-            love.graphics.setColor(White)
-            if i == Player.lastPiece then
-                self.shapeX[i] = self.shapeX[1] + Player.totalGap
-                self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
-                if Player.lastPiece ~=1 then
-                    Player.lastPiece = Player.lastPiece - 1
-                else
-                    Player.lastPiece = Player.pieceCount
-                end
-            else
-                self.shapeX[i] = self.shapeX[i]
-                self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
-            end
-            --[[
             if i == 1 then
-                self.shapes[self.pieceCount] = love.graphics.rectangle("fill",Player.x, Player.y,Player.size,Player.size)
-            elseif i ~= 1 and  i ~= self.pieceCount then
-                self.shapes[i] = love.graphics.rectangle("fill",Player.x - Player.totalGap * (i-1), Player.y,Player.size,Player.size)
+                self.shapeX[i] = Player.x
+                self.shapeY[i] = Player.y
+            else
+                self.shapeX[i] = self.shapeX[i-1] + self.xGap
+                self.shapeY[i] = self.shapeY[i-1] + self.yGap
             end
-            ]]
+        end
+    else
+        for i=1, Player.pieceCount do
+            love.graphics.setColor(White)
+            if i == Player.lastShape then -- last shape is the piece count by default and then counts down
+                
+                if Player.lastShape == Player.pieceCount then -- If the last shape is the piece count, i.e. the highest number, make it 1, as it can't go any higher
+                    self.frontShape = 1
+                else
+                    self.frontShape = i + 1 -- else increase the front shape's number by 1
+                end
+
+                self.shapeY[i] = self.shapeY[self.frontShape] + self.yGap
+                self.shapeX[i] = self.shapeX[self.frontShape] + self.xGap
+                
+                if Player.lastShape ~=1 then
+                    Player.lastShape = Player.lastShape - 1
+                else
+                    Player.lastShape = Player.pieceCount
+                end
+            end
+
+            if self.shapeX[i] > Window.limitRight then
+                self.shapeX[i] = Window.limitUpLeft
+            elseif self.shapeX[i] < Window.limitUpLeft then
+                self.shapeX[i] = Window.limitRight
+            elseif self.shapeY[i] > Window.limitDown then
+                self.shapeY[i] = Window.limitUpLeft
+            elseif self.shapeY[i] < Window.limitUpLeft then
+                self.shapeY[i] = Window.limitDown
+            end
         end
     end
 end
 
-function love.update(dt)
-
-    count = count + dt
-
-    if Player.x > Window.limitRight then
-        Player.x = Window.limitUpLeft
+function SnakeObject:Shapes() 
+    for i=1, Player.pieceCount do -- draw the square
+        love.graphics.setColor(White)
+        self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
     end
+end
+
+function CheckForInput()
+    if love.keyboard.isDown("w") and Player.direction ~= "S" and Player.direction ~= "N" then
+        Player.direction = "N"
+    elseif love.keyboard.isDown("s") and Player.direction ~= "S" and Player.direction ~= "N" then
+        Player.direction = "S"
+    elseif love.keyboard.isDown("a") and Player.direction ~= "W" and Player.direction ~= "E" then
+        Player.direction = "W"    
+    elseif love.keyboard.isDown("d") and Player.direction ~= "W" and Player.direction ~= "E" then
+        Player.direction = "E"    
+    end
+
+
+end
+
+function love.update(dt)
+    count = count + dt
+    CheckForInput()
     if count > updateDelay then
-        Player.x = Player.x + Player.totalGap
+        SnakeObject:ShapeCoOrds(false)
         count = 0
     end
-    if love.keyboard.isDown("w") and Player.y > Window.limitUpLeft then
-    end
 
-    if love.keyboard.isDown("s") and Player.y < Window.limitDown then  
-    end
-
-    if love.keyboard.isDown("a") and Player.x > Window.limitUpLeft then  
-    end
-    
-    if love.keyboard.isDown("d") and Player.x < Window.limitRight then
-    end
     DeltaTime = dt
 end
 
@@ -161,6 +190,9 @@ function love.draw()
     love.graphics.setColor(Black)
     love.graphics.print(Player.x .. ", " .. Player.y .. " DT: " .. DeltaTime, 400, 400)
     love.graphics.print(count, 400, 500)
+    for i=1,Player.pieceCount do
+        love.graphics.print(SnakeObject.shapeX[i], 100, i * 100)
+    end
 end
 
 local love_errorhandler = love.errorhandler
