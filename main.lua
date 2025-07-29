@@ -3,18 +3,8 @@ if arg[2] == "debug" then
 end
 
 function love.load()
-    Player = {
-    x = 400,
-    y = 300,
-    size = 20,
-    velocity = 200,
-    direction = "W",
-    pieceGap = 4,
-    pieceCount = 2
-    }
-
     count = 0
-    updateDelay = 0.5
+    updateDelay = 0.1
 
     SnakeObject.frontShape = 1
     Player.totalGap = Player.size + Player.pieceGap
@@ -27,14 +17,51 @@ function love.load()
     White = {255,255,255}
     Black = {0, 0, 0}
 
-    Window = {}
-    Window.limitRight = 800 - Player.size
-    Window.limitUpLeft = 0 + Player.size
-    Window.limitDown = 600 - Player.size
     GameState = "menu"
 
     SnakeObject:ShapeCoOrds(true)
 
+end
+
+Player = {
+x = 400,
+y = 300,
+size = 20,
+velocity = 200,
+direction = "W",
+pieceGap = 5,
+pieceCount = 9
+}
+
+function CreateWindow()
+    local window = {
+        w = 800,
+        h = 600,
+        gridMultiple = 25,
+    }
+    window.limitRight = window.w --- Player.size
+    window.limitUpLeft = 0 --+ Player.size
+    window.limitDown = window.h --- Player.size
+    return window
+end
+
+Win = CreateWindow()
+
+FoodObject = {
+size = 20,
+}
+
+function FoodObject:GetCoOrds()
+n = Win.gridMultiple * (math.fmod(math.random(Win.w),Win.gridMultiple))
+return n
+end
+
+FoodObject.x = FoodObject:GetCoOrds()
+FoodObject.y = FoodObject:GetCoOrds()
+
+function FoodObject:Shapes()
+    love.graphics.setColor(Black)
+    self.shapes = love.graphics.rectangle("fill",self.x, self.y, self.size, self.size)
 end
 
 --[[
@@ -42,7 +69,7 @@ Snake moves at a constant pace in random direction
 user input changes direction 
 turns on coords that intersect with input
 user pressed S at 4,2
-moving west: x + 1 per frame
+moving west: x - 1 per frame
 user presses D: at 4,2: y + 1 per frame after 4,2
 
 
@@ -81,16 +108,16 @@ x x x x x x 5
 x x x x x x 6
 
 ]]
-
 SnakeObject = {
     speed = 3,
     shapes = {},
     shapeX = {},
     shapeY = {},
-    frontShape = 0,
+    frontShape = 1,
     xGap = 0,
     yGap = 0
 }
+
 
 function SnakeObject:ShapeCoOrds(firstCheck)
     if Player.direction == "W" then
@@ -107,48 +134,46 @@ function SnakeObject:ShapeCoOrds(firstCheck)
         self.yGap = Player.totalGap
     end
     
+    --if firstCheck == true then
     if firstCheck == true then
         for i=1, Player.pieceCount do
             if i == 1 then
                 self.shapeX[i] = Player.x
                 self.shapeY[i] = Player.y
             else
-                self.shapeX[i] = self.shapeX[i-1] + self.xGap
-                self.shapeY[i] = self.shapeY[i-1] + self.yGap
+                self.shapeX[i] = self.shapeX[i-1] - self.xGap
+                self.shapeY[i] = self.shapeY[i-1] - self.yGap
             end
         end
     else
-        for i=1, Player.pieceCount do
-            love.graphics.setColor(White)
-            if i == Player.lastShape then -- last shape is the piece count by default and then counts down
-                
-                if Player.lastShape == Player.pieceCount then -- If the last shape is the piece count, i.e. the highest number, make it 1, as it can't go any higher
-                    self.frontShape = 1
-                else
-                    self.frontShape = i + 1 -- else increase the front shape's number by 1
-                end
+        -- run function
+          -- all coords set once
+          -- move last shape
+          -- last becomes first
+          -- last = last - 1, unless last = 1, in which case last becomes piece count
+        self.shapeX[Player.lastShape] = self.shapeX[SnakeObject.frontShape] + self.xGap
+        self.shapeY[Player.lastShape] = self.shapeY[SnakeObject.frontShape] + self.yGap
+        
+        SnakeObject.frontShape = Player.lastShape
 
-                self.shapeY[i] = self.shapeY[self.frontShape] + self.yGap
-                self.shapeX[i] = self.shapeX[self.frontShape] + self.xGap
-                
-                if Player.lastShape ~=1 then
-                    Player.lastShape = Player.lastShape - 1
-                else
-                    Player.lastShape = Player.pieceCount
-                end
-            end
-
-            if self.shapeX[i] > Window.limitRight then
-                self.shapeX[i] = Window.limitUpLeft
-            elseif self.shapeX[i] < Window.limitUpLeft then
-                self.shapeX[i] = Window.limitRight
-            elseif self.shapeY[i] > Window.limitDown then
-                self.shapeY[i] = Window.limitUpLeft
-            elseif self.shapeY[i] < Window.limitUpLeft then
-                self.shapeY[i] = Window.limitDown
-            end
+        if self.shapeX[Player.lastShape] > Win.limitRight then
+            self.shapeX[Player.lastShape] = Win.limitUpLeft
+        elseif self.shapeX[Player.lastShape] < Win.limitUpLeft then
+            self.shapeX[Player.lastShape] = Win.limitRight
+        elseif self.shapeY[Player.lastShape] > Win.limitDown then
+            self.shapeY[Player.lastShape] = Win.limitUpLeft
+        elseif self.shapeY[Player.lastShape] < Win.limitUpLeft then
+            self.shapeY[Player.lastShape] = Win.limitDown
         end
+
+        if Player.lastShape ~= 1 then
+            Player.lastShape = Player.lastShape - 1
+        else
+            Player.lastShape = Player.pieceCount
+        end
+
     end
+
 end
 
 function SnakeObject:Shapes() 
@@ -156,6 +181,13 @@ function SnakeObject:Shapes()
         love.graphics.setColor(White)
         self.shapes[i] = love.graphics.rectangle("fill",self.shapeX[i], self.shapeY[i], Player.size, Player.size)
     end
+end
+
+function SnakeObject:AddNewPiece()
+    Player.pieceCount = Player.pieceCount + 1
+    self.shapeX[Player.pieceCount] = self.shapeX[Player.piececount - 1] - self.xGap
+    self.shapeY[Player.pieceCount] = self.shapeY[Player.piececount - 1] - self.xGap
+    
 end
 
 function CheckForInput()
@@ -172,9 +204,18 @@ function CheckForInput()
 
 end
 
+function CheckForCollisions()
+    if SnakeObject.shapeX[SnakeObject.frontShape] == FoodObject.x and SnakeObject.shapeY[SnakeObject.frontShape] == FoodObject.y then
+        
+        FoodObject.x = FoodObject:GetCoOrds()
+        FoodObject.y = FoodObject:GetCoOrds()
+    end
+end
+
 function love.update(dt)
     count = count + dt
     CheckForInput()
+    CheckForCollisions()
     if count > updateDelay then
         SnakeObject:ShapeCoOrds(false)
         count = 0
@@ -187,8 +228,9 @@ function love.draw()
     love.graphics.setColor(Green)
     love.graphics.rectangle("fill",0 , 0, 800, 600)
     SnakeObject:Shapes()
+    FoodObject:Shapes()
     love.graphics.setColor(Black)
-    love.graphics.print(Player.x .. ", " .. Player.y .. " DT: " .. DeltaTime, 400, 400)
+    love.graphics.print("Player x: " .. ", " .. "Player y: " .. Player.y, 400, 400)
     love.graphics.print(count, 400, 500)
     for i=1,Player.pieceCount do
         love.graphics.print(SnakeObject.shapeX[i], 100, i * 100)
